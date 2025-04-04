@@ -1,0 +1,6 @@
+# Core dependencies
+python-dotenv>=1.0.0
+markdown>=3.4.3
+python-frontmatter>=1.0.0
+
+# AI/ML dependencies (to be added based on chosen implementation)
