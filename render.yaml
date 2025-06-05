@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: style-profiler-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python api_server.py
+    envVars:
+      - key: MONGODB_URI
+        value: mongodb+srv://vicsicard:Z6T46srM9kEGZfLJ@cluster0.tfi0dul.mongodb.net/new-self-website-5-15-25?retryWrites=true&w=majority&appName=Cluster0
+      - key: USE_MONGODB
+        value: true
+      - key: API_KEY
+        generateValue: true
+      - key: PORT
+        value: 10000
+    healthCheckPath: /health
+    autoDeploy: true

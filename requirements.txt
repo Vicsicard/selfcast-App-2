@@ -1,7 +1,11 @@
 # Core dependencies
 python-dotenv==1.0.0  # For environment variable management
-supabase==2.0.3       # For Supabase integration
+supabase==2.0.3       # For Supabase integration (legacy)
 loguru==0.7.2         # For logging
+pymongo==4.6.1        # For MongoDB integration
+flask==2.3.3          # For API server
+requests==2.31.0      # For HTTP requests
+gunicorn==21.2.0      # For production web server
 
 # NLP and Analysis
 transformers==4.38.1   # For text analysis

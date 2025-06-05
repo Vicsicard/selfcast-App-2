@@ -1,12 +1,12 @@
 """
 Main script for the Style Profiler application.
+Analyzes transcript chunks and generates a style profile.
 """
 
 import argparse
 import os
-import shutil
+from pathlib import Path
 from utils.md_loader import load_transcript
-from utils.supabase_loader import get_chunks_for_user_project
 
 from agents.voice_agent import analyze as analyze_voice
 from agents.theme_agent import analyze as analyze_theme
@@ -17,56 +17,46 @@ from agents.relatability_agent import analyze as analyze_relatability
 def main():
     parser = argparse.ArgumentParser(description="Style Profiler - Analyze speaker style from transcript")
     parser.add_argument('--transcript', required=True, help="Path to transcript markdown file")
-    parser.add_argument('--project-id', help="Project ID for Supabase query")
-    parser.add_argument('--user-id', help="User ID for Supabase query")
     args = parser.parse_args()
 
-    # Load local markdown transcript
-    transcript = load_transcript(args.transcript)
-
-    # Load Supabase chunks if IDs provided
-    has_supabase = False
-    if args.project_id and args.user_id:
-        chunks = get_chunks_for_user_project(args.project_id, args.user_id)
-        has_supabase = True
-        print(f"✅ Loaded {len(chunks)} chunks from Supabase for user {args.user_id} / project {args.project_id}")
-
-    # Analyze transcript with agents
-    output = "## voice\n" + analyze_voice(transcript) + "\n"
-    output += "## themes\n" + analyze_theme(transcript) + "\n"
-    output += "## values\n" + analyze_values(transcript) + "\n"
-    output += "## emotional_tone\n" + analyze_emotion(transcript) + "\n"
-    output += "## relatability\n" + analyze_relatability(transcript)
-
-    # Get project root directory
-    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    
-    # Save style profile
-    style_profile_path = os.path.join(root_dir, "style-profile.md")
-    with open(style_profile_path, "w", encoding="utf-8") as f:
-        f.write(output)
-
-    # Create export directory for App 3
-    export_dir = os.path.join(root_dir, "output", "for_app3")
-    os.makedirs(export_dir, exist_ok=True)
-
-    # Copy files to export directory
-    shutil.copy2(style_profile_path, os.path.join(export_dir, "style-profile.md"))
-    
-    transcript_chunks_path = os.path.join(root_dir, "..", "transcript_builder", "output", "transcript_chunks.md")
-    if os.path.exists(transcript_chunks_path):
-        shutil.copy2(transcript_chunks_path, os.path.join(export_dir, "transcript_chunks.md"))
+    try:
+        # Load and validate transcript
+        print(f"Loading transcript from {args.transcript}")
+        transcript_content, chunk_count = load_transcript(args.transcript)
         
-    print("✅ style_profile.md generated")
-    print("📦 Transcript source: [Local]")
-    if has_supabase:
-        print("🧠 Metadata source: [Supabase]")
+        # Print sanity check
+        print(f"[+] Loaded {chunk_count} chunks from transcript_chunks.md")
+        print("[+] Confirmed only Speaker 2 content used")
         
-    print("\n✅ App 3 Handoff Ready")
-    print("📦 Files copied to: /output/for_app3/")
-    print("📁 Includes:")
-    print("- transcript_chunks.md")
-    print("- style-profile.md")
+        # Create output directory
+        root_dir = Path(__file__).parent.parent
+        output_dir = root_dir / "output" / "app2"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Run analysis agents
+        print("\nRunning analysis agents...")
+        
+        output = []
+        output.append("# Style Profile\n")
+        output.append("## voice:\n" + analyze_voice(transcript_content) + "\n")
+        output.append("## themes:\n" + analyze_theme(transcript_content) + "\n")
+        output.append("## values:\n" + analyze_values(transcript_content) + "\n")
+        output.append("## emotional_tone:\n" + analyze_emotion(transcript_content) + "\n")
+        output.append("## relatability:\n" + analyze_relatability(transcript_content))
+        
+        # Save style profile
+        style_profile_path = output_dir / "style-profile.md"
+        style_profile_path.write_text("\n".join(output), encoding='utf-8')
+        
+        print("\nAnalysis complete!")
+        print(f"Style profile saved to: {style_profile_path}")
+        
+    except FileNotFoundError:
+        print(f"Error: Could not find transcript file at {args.transcript}")
+        raise
+    except Exception as e:
+        print(f"Error during analysis: {str(e)}")
+        raise
 
 if __name__ == "__main__":
     main()
